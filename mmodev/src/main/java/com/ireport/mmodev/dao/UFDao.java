@@ -1,12 +1,16 @@
 package com.ireport.mmodev.dao;
 
 import java.sql.*;
+import java.util.ArrayList;
 
 import com.ireport.mmodev.constants.Constants;
 import com.ireport.mmodev.model.UF;
 
+import javax.swing.plaf.nimbus.State;
+
 public class UFDao {
     Connection con = null;
+
     private void conectar() {
         // Desconecta primeiro
         this.desconectar();
@@ -18,14 +22,19 @@ public class UFDao {
                     Constants.getUSER_KEY(),
                     Constants.getKEY());
 
-        } catch (Exception e) { System.out.println(e.getMessage()); }
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
     }
 
     // Fecha a conexão
     private void desconectar() {
         if (con != null) {
-            try { if (!con.isClosed()) con.close(); }
-            catch (SQLException e) { System.out.println(e.getMessage()); }
+            try {
+                if (!con.isClosed()) con.close();
+            } catch (SQLException e) {
+                System.out.println(e.getMessage());
+            }
         }
     }
 
@@ -41,10 +50,11 @@ public class UFDao {
                 if (resultado.getString("CHAVE") != null) retorno = resultado.getInt("CHAVE");
             }
 
+        } catch (Exception e) {
+            System.out.println(e.getMessage() + " - " + sql.toString());
+        } finally {
+            this.desconectar();
         }
-
-        catch (Exception e) { System.out.println(e.getMessage() + " - " + sql.toString()); }
-        finally { this.desconectar(); }
 
         return retorno;
     }
@@ -69,16 +79,130 @@ public class UFDao {
             Statement stmt = con.createStatement();
             stmt.executeUpdate(sql.toString());
 
+        } catch (SQLException e) {
+            System.out.println(e.getMessage() + " - " + sql.toString());
+        } finally {
+            this.desconectar();
         }
-
-        catch (SQLException e) { System.out.println(e.getMessage() + " - " + sql.toString()); }
-        finally { this.desconectar(); }
     }
 
     public void atualizar(UF uf) {
-        StringBuffer sql = new StringBuffer("UPDATE SET ");
+        StringBuffer sql = new StringBuffer("UPDATE UF SET ");
+        try {
+            if (uf.getNome() != null && !uf.getNome().equals("")) {
+                sql.append("NOME = '" + uf.getNome().trim() + "'");
+            }
 
+            if (uf.getSigla() != null && !uf.getSigla().equals("")) {
+                sql.append(",SIGLA = '" + uf.getSigla().trim() + "'");
+            }
 
+            sql.append(" WHERE COGIDO_UF = " + uf.getId());
+
+            // Conecta com o DB
+            this.conectar();
+            Statement stmt = con.createStatement();
+            stmt.executeUpdate(sql.toString());
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage() + " - " + sql.toString());
+        } finally {
+            this.desconectar();
+        }
     }
 
+    protected UF resultadoParaBean(ResultSet resultado) throws Exception {
+        UF retorno = new UF();
+
+        try {
+            retorno.setId(resultado.getInt("CODIGO_UF"));
+            retorno.setNome(resultado.getString("NOME"));
+            retorno.setSigla(resultado.getString("SIGLA"));
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        }
+
+        return retorno;
+    }
+
+    public ArrayList<UF> consulta(UF uf) {
+        ArrayList<UF> retorno = new ArrayList<UF>();
+
+        try {
+            UF ufAux = new UF();
+
+            StringBuffer sql = new StringBuffer("SELECT * FROM UF WHERE 1=1");
+            if (uf.getId() != null && uf.getId() > 0) sql.append(" AND CODIGO_UF = " + uf.getId());
+            if (uf.getNome() != null && !uf.getNome().equals(""))
+                sql.append(" AND NOME like " + "'%" + uf.getNome() + "%'");
+            if (uf.getSigla() != null && !uf.getSigla().equals(""))
+                sql.append(" AND SIGLA like " + "'%" + uf.getSigla() + "%'");
+
+            sql.append(" ORDER BY NOME");
+
+            // Conecta com o DB
+            this.conectar();
+            Statement stmt = con.createStatement();
+            ResultSet resultado = stmt.executeQuery(sql.toString());
+
+            while (resultado.next()) {
+                ufAux = resultadoParaBean(resultado);
+                retorno.add(ufAux);
+            }
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        } finally {
+            this.desconectar();
+        }
+
+        return retorno;
+    }
+
+    public ArrayList<UF> todos(String ord) {
+        ArrayList<UF> retorno = new ArrayList<UF>();
+        try {
+            UF ufAux = new UF();
+
+            StringBuffer sql = new StringBuffer("SELECT * FROM UF");
+            if (ord != null && !ord.equals("")) sql.append(" ORDER BY " + ord);
+
+            // Conecta com o banco de dados
+            this.conectar();
+            Statement stmt = con.createStatement();
+            ResultSet resultado = stmt.executeQuery(sql.toString());
+
+            while (resultado.next()) {
+                ufAux = resultadoParaBean(resultado);
+                retorno.add(ufAux);
+            }
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        } finally {
+            this.desconectar();
+        }
+
+        return retorno;
+    }
+
+    public void excluir(UF uf) {
+        try {
+            StringBuffer sql = new StringBuffer("DELETE FROM UF");
+            sql.append(" WHERE CODIGO_UF =" + uf.getId());
+
+            // Conecta com o banco de dados
+            this.conectar();
+            Statement stmt = con.createStatement();
+            stmt.executeUpdate(sql.toString());
+
+        } catch (Exception e) {
+            System.out.println(e.getMessage());
+        } finally {
+            this.desconectar();
+        }
+    }
 }
+
+

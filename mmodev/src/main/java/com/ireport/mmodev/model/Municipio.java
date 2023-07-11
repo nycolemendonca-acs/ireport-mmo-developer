@@ -8,4 +8,5 @@ public class Municipio {
     private String nome;
     private UF uf;
     private Long populacao;
+    private static final long serialVersionUID = 1L;
 }

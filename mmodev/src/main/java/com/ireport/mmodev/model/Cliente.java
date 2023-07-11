@@ -12,4 +12,5 @@ public class Cliente {
     private Double dlongitude;
     private Municipio municipio;
     private UF uf;
+    private static final long serialVersionUID = 1L;
 }
